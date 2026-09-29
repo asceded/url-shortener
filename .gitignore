@@ -1,0 +1,9 @@
+url-shortener
+*.exe
+.env
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+bin/
