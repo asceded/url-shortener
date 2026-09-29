@@ -61,8 +61,8 @@ func run(log *slog.Logger) error {
 	clickWorker := worker.NewClickWorker(clickRepo, 10000, 100, 2*time.Second, log)
 	clickWorker.Start(ctx)
 
-	svc := service.NewLinkService(linkRepo, clickRepo, cache, clickWorker, cfg.BaseURL, log)
-	h := handler.NewLinkHandler(svc)
+	svc := service.NewLinkService(linkRepo, clickRepo, cache, clickWorker, log)
+	h := handler.NewLinkHandler(svc, cfg.BaseURL, log)
 
 	router := gin.New()
 	router.Use(gin.Recovery())

@@ -33,7 +33,6 @@ type LinkService struct {
 	clickRepo *repository.ClickRepository
 	cache     *repository.LinkCache
 	worker    *worker.ClickWorker
-	baseURL   string
 	log       *slog.Logger
 }
 
@@ -42,7 +41,6 @@ func NewLinkService(
 	clickRepo *repository.ClickRepository,
 	cache *repository.LinkCache,
 	worker *worker.ClickWorker,
-	baseURL string,
 	log *slog.Logger,
 ) *LinkService {
 	return &LinkService{
@@ -50,13 +48,8 @@ func NewLinkService(
 		clickRepo: clickRepo,
 		cache:     cache,
 		worker:    worker,
-		baseURL:   baseURL,
 		log:       log,
 	}
-}
-
-func (s *LinkService) BaseURL() string {
-	return s.baseURL
 }
 
 func (s *LinkService) CreateLink(ctx context.Context, originalURL string) (*model.Link, error) {

@@ -1,20 +1,32 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/asceded/url-shortener/internal/model"
 	"github.com/asceded/url-shortener/internal/service"
 )
 
-type LinkHandler struct {
-	svc *service.LinkService
+type LinkService interface {
+	CreateLink(ctx context.Context, url string) (*model.Link, error)
+	Resolve(ctx context.Context, code, ip, userAgent string) (string, error)
+	GetStats(ctx context.Context, code string) (*model.LinkStats, error)
+	Delete(ctx context.Context, code string) error
 }
 
-func NewLinkHandler(svc *service.LinkService) *LinkHandler {
-	return &LinkHandler{svc: svc}
+type LinkHandler struct {
+	svc     LinkService
+	baseURL string
+	log     *slog.Logger
+}
+
+func NewLinkHandler(svc LinkService, baseURL string, log *slog.Logger) *LinkHandler {
+	return &LinkHandler{svc: svc, baseURL: baseURL, log: log}
 }
 
 type createRequest struct {
@@ -40,13 +52,14 @@ func (h *LinkHandler) Create(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid url"})
 			return
 		}
+		h.log.Error("create link failed", "error", err, "url", req.URL)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, createResponse{
 		Code:        link.Code,
-		ShortURL:    h.svc.BaseURL() + "/" + link.Code,
+		ShortURL:    h.baseURL + "/" + link.Code,
 		OriginalURL: link.OriginalURL,
 	})
 }
@@ -65,6 +78,7 @@ func (h *LinkHandler) Redirect(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 			return
 		}
+		h.log.Error("resolve link failed", "error", err, "code", code)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
@@ -81,6 +95,7 @@ func (h *LinkHandler) Stats(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 			return
 		}
+		h.log.Error("get stats failed", "error", err, "code", code)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
@@ -96,6 +111,7 @@ func (h *LinkHandler) Delete(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "link not found"})
 			return
 		}
+		h.log.Error("delete link failed", "error", err, "code", code)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
